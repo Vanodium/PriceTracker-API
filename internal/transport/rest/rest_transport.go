@@ -14,7 +14,8 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
-const OauthGoogleUrlAPI = "https://www.googleapis.com/oauth2/v2/userinfo"
+const OAuthGoogleUrlAPI = "https://www.googleapis.com/oauth2/v2/userinfo"
+const OAuthRedirectUrl = "http://localhost:8989/auth/callback"
 
 type userRequest struct {
 	UserHash  string
@@ -23,21 +24,21 @@ type userRequest struct {
 	XPath     string
 }
 
-func OauthCfg() *oauth2.Config {
-	err := godotenv.Load("../../internal/transport/oauthcfg.env")
+func OAuthCfg() *oauth2.Config {
+	err := godotenv.Load("../../internal/transport/enviroment.env")
 	if err != nil {
 		log.Fatal(err)
 	}
-	var OauthCfg = &oauth2.Config{
-		ClientID:     os.Getenv("CLIENT_ID"),
-		ClientSecret: os.Getenv("CLIENT_SECRET"),
-		RedirectURL:  "http://localhost:8989/auth/callback",
+	var oAuthCfg = &oauth2.Config{
+		ClientID:     os.Getenv("OAUTH_CLIENT_ID"),
+		ClientSecret: os.Getenv("OAUTH_CLIENT_SECRET"),
+		RedirectURL:  os.Getenv("OAUTH_REDIRECT_URL"),
 		Scopes: []string{
-			"https://www.googleapis.com/auth/userinfo.email",
+			OAuthRedirectUrl,
 		},
 		Endpoint: google.Endpoint,
 	}
-	return OauthCfg
+	return oAuthCfg
 }
 
 func HashString(s string) string {

@@ -17,55 +17,55 @@ import (
 
 func Router() http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/auth/oauth", oauthHandler)
-	mux.HandleFunc("/auth/callback", oauthCallbackHandler)
+	mux.HandleFunc("/auth/oauth", oAuthHandler)
+	mux.HandleFunc("/auth/callback", oAuthCallbackHandler)
 	mux.HandleFunc("/trackers", trackersHandler)
 	return mux
 }
 
-func oauthHandler(w http.ResponseWriter, r *http.Request) {
+func oAuthHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Got oauth request")
-	url := rest_transport.OauthCfg().AuthCodeURL("state", oauth2.AccessTypeOffline)
+	url := rest_transport.OAuthCfg().AuthCodeURL("state", oauth2.AccessTypeOffline)
 	http.Redirect(w, r, url, http.StatusSeeOther)
 }
 
-func oauthCallbackHandler(w http.ResponseWriter, r *http.Request) {
+func oAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Got oauth callback")
-	var userData struct {
+	var oAuthUserData struct {
 		TokenHash string
 		UserEmail string `json:"email"`
 	}
 
 	code := r.URL.Query().Get("code")
-	tok, err := rest_transport.OauthCfg().Exchange(context.Background(), code)
+	tok, err := rest_transport.OAuthCfg().Exchange(context.Background(), code)
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Println("Got oauth token")
 
-	userData.TokenHash = rest_transport.HashString(tok.RefreshToken)
-	resp, err := rest_transport.OauthCfg().Client(context.Background(), tok).Get(rest_transport.OauthGoogleUrlAPI)
+	oAuthUserData.TokenHash = rest_transport.HashString(tok.RefreshToken)
+	resp, err := rest_transport.OAuthCfg().Client(context.Background(), tok).Get(rest_transport.OAuthGoogleUrlAPI)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	defer resp.Body.Close()
-	err = json.NewDecoder(resp.Body).Decode(&userData)
+	err = json.NewDecoder(resp.Body).Decode(&oAuthUserData)
 	if err != nil {
 		log.Fatal("Unable to decode user info")
 	}
 
-	err = db_operations.AddUser(userData.TokenHash, userData.UserEmail)
+	err = db_operations.AddUser(oAuthUserData.TokenHash, oAuthUserData.UserEmail)
 	if err != nil {
 		rest_transport.ApiResponceJson(w, "", true, "Can not add user")
 		log.Fatal(err)
 	}
-	rest_transport.ApiResponceJson(w, userData.TokenHash, false, "")
+	rest_transport.ApiResponceJson(w, oAuthUserData.TokenHash, false, "")
 	log.Println("Sent token hash to user")
 }
 
 func trackersHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println(rest_transport.OauthCfg().ClientID)
+	log.Println(rest_transport.OAuthCfg().ClientID)
 
 	req := rest_transport.DecodeRequest(r)
 	if !db_operations.UserExists(req.UserHash) {

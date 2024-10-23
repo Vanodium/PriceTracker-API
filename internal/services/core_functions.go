@@ -1,9 +1,6 @@
 package core_functions
 
 import (
-	// "fmt"
-	// "io"
-	// "net/http"
 	"log"
 	"regexp"
 	"strconv"

@@ -33,8 +33,8 @@ func AddUser(tokenHash string, userEmail string) error {
 	if err != nil {
 		return err
 	}
-	log.Println("New user added")
 	operation.Exec(tokenHash, userEmail)
+	log.Println("New user added")
 	return nil
 }
 
@@ -44,8 +44,8 @@ func UserExists(tokenHash string) bool {
 
 	operation := "SELECT user_email FROM Users WHERE token_hash = ?"
 	var email string
-	err := db.QueryRow(operation, tokenHash).Scan(&email)
-	return err != sql.ErrNoRows
+	row := db.QueryRow(operation, tokenHash).Scan(&email)
+	return row != sql.ErrNoRows
 }
 
 func GetUserId(tokenHash string) int64 {
@@ -73,7 +73,7 @@ func GetUserTrackers(userId int64) [][]string {
 	db := connectDatabase()
 	defer db.Close()
 
-	rows, err := db.Query("SELECT tracker_id, link FROM Trackers where user_id = ?", userId)
+	rows, err := db.Query("SELECT tracker_id, link FROM Trackers WHERE user_id = ?", userId)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -131,7 +131,7 @@ func GetTrackerById(trackerId int64) (int64, string, string) {
 
 	var userId int64
 	var link, path string
-	db.QueryRow("SELECT user_id, link, path FROM Trackers where tracker_id = ?", trackerId).Scan(&userId, &link, &path)
+	db.QueryRow("SELECT user_id, link, path FROM Trackers WHERE tracker_id = ?", trackerId).Scan(&userId, &link, &path)
 	return userId, link, path
 }
 
@@ -140,7 +140,7 @@ func GetOldPrices(currentDate int64) [][]string {
 	defer db.Close()
 
 	latestCheckDate := currentDate - 3600
-	rows, err := db.Query("SELECT tracker_id, last_price FROM Prices where date < ?", latestCheckDate)
+	rows, err := db.Query("SELECT tracker_id, last_price FROM Prices WHERE date < ?", latestCheckDate)
 	if err != nil {
 		log.Fatal(err)
 	}
