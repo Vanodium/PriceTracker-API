@@ -1,0 +1,4 @@
+
+.DS_Store
+internal/transport/oauthcfg.env
+internal/transport/gmailcfg.env
