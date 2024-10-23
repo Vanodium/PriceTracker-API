@@ -1,5 +1,3 @@
-
 .DS_Store
-internal/transport/oauthcfg.env
-internal/transport/gmailcfg.env
+internal/transport/enviroment.env
 tests/req.json
