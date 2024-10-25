@@ -32,9 +32,9 @@ func OAuthCfg() *oauth2.Config {
 	var oAuthCfg = &oauth2.Config{
 		ClientID:     os.Getenv("OAUTH_CLIENT_ID"),
 		ClientSecret: os.Getenv("OAUTH_CLIENT_SECRET"),
-		RedirectURL:  os.Getenv("OAUTH_REDIRECT_URL"),
+		RedirectURL:  OAuthRedirectUrl,
 		Scopes: []string{
-			OAuthRedirectUrl,
+			"https://www.googleapis.com/auth/userinfo.email",
 		},
 		Endpoint: google.Endpoint,
 	}
