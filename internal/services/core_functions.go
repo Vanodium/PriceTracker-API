@@ -54,7 +54,7 @@ func ExtractPrice(link string, path string) string {
 		log.Println("Found data by xPath and link")
 		return htmlquery.InnerText(list[0])
 	}
-	log.Println("Did not find price. Captcha??")
+	log.Println("Did not find price. Captcha?")
 	return ""
 }
 
