@@ -2,6 +2,7 @@ package core_functions
 
 import (
 	"log"
+	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
@@ -9,7 +10,9 @@ import (
 
 	db_operations "github.com/Vanodium/pricetracker/internal/db"
 	notifications "github.com/Vanodium/pricetracker/internal/transport"
-	"github.com/antchfx/htmlquery"
+
+	// "github.com/antchfx/htmlquery"
+	"github.com/PuerkitoBio/goquery"
 )
 
 func GetCurrentDate() int64 {
@@ -41,21 +44,41 @@ func CheckPrices() {
 	}
 }
 
+// func ExtractPrice(link string, path string) string {
+// 	doc, err := htmlquery.LoadURL(link)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	list, err := htmlquery.QueryAll(doc, path)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	if list != nil {
+// 		log.Println("Found data by xPath and link")
+// 		return htmlquery.InnerText(list[0])
+// 	}
+// 	log.Println("Did not find price. Captcha?")
+// 	return ""
+// }
+
 func ExtractPrice(link string, path string) string {
-	doc, err := htmlquery.LoadURL(link)
+	res, err := http.Get(link)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
-	list, err := htmlquery.QueryAll(doc, path)
+	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		log.Fatalf("status code error: %d %s", res.StatusCode, res.Status)
+	}
+	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
-	if list != nil {
-		log.Println("Found data by xPath and link")
-		return htmlquery.InnerText(list[0])
-	}
-	log.Println("Did not find price. Captcha?")
-	return ""
+	var options []string
+	doc.Find(path).Each(func(i int, s *goquery.Selection) {
+		options = append(options, s.Text())
+	})
+	return options[0]
 }
 
 func ParseDigits(block string) string {

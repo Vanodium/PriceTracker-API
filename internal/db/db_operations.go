@@ -27,14 +27,41 @@ func connectDatabase() *sql.DB {
 
 func AddUser(tokenHash string, userEmail string) error {
 	db := connectDatabase()
+	if userEmailExists(userEmail) {
+		return updateUserHash(userEmail, tokenHash)
+	} else {
+		defer db.Close()
+
+		operation, err := db.Prepare("INSERT INTO Users (token_hash, user_email) VALUES (?, ?)")
+		if err != nil {
+			return err
+		}
+		operation.Exec(tokenHash, userEmail)
+		log.Println("New user added")
+		return nil
+	}
+}
+
+func userEmailExists(userEmail string) bool {
+	db := connectDatabase()
 	defer db.Close()
 
-	operation, err := db.Prepare("INSERT INTO Users (token_hash, user_email) VALUES (?, ?)")
+	operation := "SELECT token_hash FROM Users WHERE user_email = ?"
+	var hash string
+	row := db.QueryRow(operation, userEmail).Scan(&hash)
+	return row != sql.ErrNoRows
+}
+
+func updateUserHash(userEmail string, tokenHash string) error {
+	db := connectDatabase()
+	defer db.Close()
+
+	operation, err := db.Prepare("UPDATE Users SET token_hash = ? WHERE user_email = ?")
 	if err != nil {
 		return err
 	}
 	operation.Exec(tokenHash, userEmail)
-	log.Println("New user added")
+	log.Printf("Token changed for user %s", userEmail)
 	return nil
 }
 

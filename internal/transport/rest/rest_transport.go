@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"encoding/hex"
+	"strconv"
 
 	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
@@ -64,12 +65,27 @@ func ApiResponceJson[T any](w http.ResponseWriter, data T, isError bool, message
 	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
+	log.Println("Returned trackers", response.Data)
 }
 
 func DecodeRequest(r *http.Request) userRequest {
 	var req userRequest
-	decoder := json.NewDecoder(r.Body)
-	defer r.Body.Close()
-	decoder.Decode(&req)
+	parameters := r.URL.Query()
+	userHash, trackerId, url, xPath := parameters.Get("UserHash"), parameters.Get("TrackerId"), parameters.Get("Url"), parameters.Get("XPath")
+	if userHash == "" {
+		log.Fatal("Empty token from get request")
+	}
+	req.UserHash = userHash
+	if trackerId != "" {
+		log.Println("Got tracker id in request")
+		req.TrackerId, _ = strconv.ParseInt(trackerId, 10, 64)
+	} else if url != "" {
+		if xPath != "" {
+			log.Println("Got link and xPath request")
+			req.Url, req.XPath = url, xPath
+		} else {
+			log.Fatal("Emty link or xPath")
+		}
+	}
 	return req
 }
