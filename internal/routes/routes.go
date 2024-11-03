@@ -83,10 +83,10 @@ func trackersHandler(w http.ResponseWriter, r *http.Request) {
 		trackers := db_operations.GetUserTrackers(userId)
 		rest_transport.ApiResponceJson(w, trackers, false, "")
 	case http.MethodPost:
-		log.Println("Received POST request")
+		log.Println("Received POST request: ", req.TrackerUrl, req.CssSelector)
 		currentPrice := core_functions.ParseDigits(core_functions.ExtractPrice(req.TrackerUrl, req.CssSelector))
 		if currentPrice == "" {
-			log.Fatal("Corrupted link or path")
+			log.Fatal("Corrupted link or selector")
 			rest_transport.ApiResponceJson(w, "", true, "Error parsing price")
 		}
 

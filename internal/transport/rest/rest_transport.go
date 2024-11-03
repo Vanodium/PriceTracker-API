@@ -81,7 +81,7 @@ func DecodeRequest(r *http.Request) userRequest {
 		req.TrackerId, _ = strconv.ParseInt(trackerId, 10, 64)
 	} else if trackerUrl != "" {
 		if cssSelector != "" {
-			log.Println("Got link and xPath request")
+			log.Println("Got link and selector request")
 			req.TrackerUrl, req.CssSelector = trackerUrl, cssSelector
 		} else {
 			log.Fatal("Emty link or xPath")
