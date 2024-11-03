@@ -19,10 +19,10 @@ const OAuthGoogleUrlAPI = "https://www.googleapis.com/oauth2/v2/userinfo"
 const OAuthRedirectUrl = "http://localhost:8989/auth/callback"
 
 type userRequest struct {
-	UserHash  string
-	TrackerId int64
-	Url       string
-	XPath     string
+	UserHash    string
+	TrackerId   int64
+	TrackerUrl  string
+	CssSelector string
 }
 
 func OAuthCfg() *oauth2.Config {
@@ -71,7 +71,7 @@ func ApiResponceJson[T any](w http.ResponseWriter, data T, isError bool, message
 func DecodeRequest(r *http.Request) userRequest {
 	var req userRequest
 	parameters := r.URL.Query()
-	userHash, trackerId, url, xPath := parameters.Get("UserHash"), parameters.Get("TrackerId"), parameters.Get("Url"), parameters.Get("XPath")
+	userHash, trackerId, trackerUrl, cssSelector := parameters.Get("UserHash"), parameters.Get("TrackerId"), parameters.Get("TrackerUrl"), parameters.Get("CssSelector")
 	if userHash == "" {
 		log.Fatal("Empty token from get request")
 	}
@@ -79,10 +79,10 @@ func DecodeRequest(r *http.Request) userRequest {
 	if trackerId != "" {
 		log.Println("Got tracker id in request")
 		req.TrackerId, _ = strconv.ParseInt(trackerId, 10, 64)
-	} else if url != "" {
-		if xPath != "" {
+	} else if trackerUrl != "" {
+		if cssSelector != "" {
 			log.Println("Got link and xPath request")
-			req.Url, req.XPath = url, xPath
+			req.TrackerUrl, req.CssSelector = trackerUrl, cssSelector
 		} else {
 			log.Fatal("Emty link or xPath")
 		}

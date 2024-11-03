@@ -11,7 +11,6 @@ import (
 	db_operations "github.com/Vanodium/pricetracker/internal/db"
 	notifications "github.com/Vanodium/pricetracker/internal/transport"
 
-	// "github.com/antchfx/htmlquery"
 	"github.com/PuerkitoBio/goquery"
 )
 
@@ -27,42 +26,25 @@ func CheckPrices() {
 	var trackerIdInt int64
 
 	var userId int64
-	var link, xPath string
+	var trackerUrl, cssSelector string
 
 	for _, recording := range oldPrices {
 		trackerId, oldPrice = recording[0], recording[1]
 		trackerIdInt, _ = strconv.ParseInt(trackerId, 10, 64)
-		userId, link, xPath = db_operations.GetTrackerById(trackerIdInt)
+		userId, trackerUrl, cssSelector = db_operations.GetTrackerById(trackerIdInt)
 
-		currentPrice = ParseDigits(ExtractPrice(link, xPath))
+		currentPrice = ParseDigits(ExtractPrice(trackerUrl, cssSelector))
 		if currentPrice != oldPrice {
 			userEmail := db_operations.GetEmailById(userId)
-			notifications.EmailNotification(userEmail, link)
+			notifications.EmailNotification(userEmail, trackerUrl)
 			db_operations.UpdatePrice(trackerIdInt, currentPrice)
 		}
 		db_operations.UpdatePriceDate(trackerIdInt, currentDate)
 	}
 }
 
-// func ExtractPrice(link string, path string) string {
-// 	doc, err := htmlquery.LoadURL(link)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	list, err := htmlquery.QueryAll(doc, path)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	if list != nil {
-// 		log.Println("Found data by xPath and link")
-// 		return htmlquery.InnerText(list[0])
-// 	}
-// 	log.Println("Did not find price. Captcha?")
-// 	return ""
-// }
-
-func ExtractPrice(link string, path string) string {
-	res, err := http.Get(link)
+func ExtractPrice(trackerUrl string, cssSelector string) string {
+	res, err := http.Get(trackerUrl)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -75,7 +57,7 @@ func ExtractPrice(link string, path string) string {
 		log.Fatal(err)
 	}
 	var options []string
-	doc.Find(path).Each(func(i int, s *goquery.Selection) {
+	doc.Find(cssSelector).Each(func(i int, s *goquery.Selection) {
 		options = append(options, s.Text())
 	})
 	return options[0]

@@ -31,7 +31,7 @@ func oAuthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 var OAuthUserData struct {
-	TokenHash string
+	UserHash  string
 	UserEmail string `json:"email"`
 }
 
@@ -45,7 +45,7 @@ func oAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println("Got oauth token")
 
-	OAuthUserData.TokenHash = rest_transport.HashString(tok.RefreshToken)
+	OAuthUserData.UserHash = rest_transport.HashString(tok.RefreshToken)
 	resp, err := rest_transport.OAuthCfg().Client(context.Background(), tok).Get(rest_transport.OAuthGoogleUrlAPI)
 	if err != nil {
 		log.Fatal(err)
@@ -56,7 +56,7 @@ func oAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal("Unable to decode user info")
 	}
-	err = db_operations.AddUser(OAuthUserData.TokenHash, OAuthUserData.UserEmail)
+	err = db_operations.AddUser(OAuthUserData.UserHash, OAuthUserData.UserEmail)
 	if err != nil {
 		rest_transport.ApiResponceJson(w, "", true, "Can not add user")
 		log.Fatal(err)
@@ -66,12 +66,10 @@ func oAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 func getTokenHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Got TOKEN request")
-	rest_transport.ApiResponceJson(w, OAuthUserData.TokenHash, false, "")
+	rest_transport.ApiResponceJson(w, OAuthUserData.UserHash, false, "")
 }
 
 func trackersHandler(w http.ResponseWriter, r *http.Request) {
-	// log.Println(rest_transport.OAuthCfg().ClientID)
-
 	req := rest_transport.DecodeRequest(r)
 	if !db_operations.UserExists(req.UserHash) {
 		log.Fatal("Wrong user token!")
@@ -86,13 +84,13 @@ func trackersHandler(w http.ResponseWriter, r *http.Request) {
 		rest_transport.ApiResponceJson(w, trackers, false, "")
 	case http.MethodPost:
 		log.Println("Received POST request")
-		currentPrice := core_functions.ParseDigits(core_functions.ExtractPrice(req.Url, req.XPath))
+		currentPrice := core_functions.ParseDigits(core_functions.ExtractPrice(req.TrackerUrl, req.CssSelector))
 		if currentPrice == "" {
 			log.Fatal("Corrupted link or path")
 			rest_transport.ApiResponceJson(w, "", true, "Error parsing price")
 		}
 
-		trackerId, err := db_operations.AddTracker(userId, req.Url, req.XPath)
+		trackerId, err := db_operations.AddTracker(userId, req.TrackerUrl, req.CssSelector)
 		if err != nil {
 			rest_transport.ApiResponceJson(w, "", true, "Error adding tracker")
 			log.Fatal(err)

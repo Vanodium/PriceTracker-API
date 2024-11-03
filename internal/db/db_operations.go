@@ -9,11 +9,11 @@ import (
 )
 
 type CreateTrackerRequest struct {
-	TrackerId  int64
-	UserId     int64
-	Link       string
-	XPath      string
-	StartPrice string
+	TrackerId   int64
+	UserId      int64
+	TrackerUrl  string
+	CssSelector string
+	StartPrice  string
 }
 
 func connectDatabase() *sql.DB {
@@ -25,18 +25,18 @@ func connectDatabase() *sql.DB {
 	return database
 }
 
-func AddUser(tokenHash string, userEmail string) error {
+func AddUser(userHash string, userEmail string) error {
 	db := connectDatabase()
 	if userEmailExists(userEmail) {
-		return updateUserHash(userEmail, tokenHash)
+		return updateUserHash(userEmail, userHash)
 	} else {
 		defer db.Close()
 
-		operation, err := db.Prepare("INSERT INTO Users (token_hash, user_email) VALUES (?, ?)")
+		operation, err := db.Prepare("INSERT INTO Users (user_hash, user_email) VALUES (?, ?)")
 		if err != nil {
 			return err
 		}
-		operation.Exec(tokenHash, userEmail)
+		operation.Exec(userHash, userEmail)
 		log.Println("New user added")
 		return nil
 	}
@@ -46,42 +46,42 @@ func userEmailExists(userEmail string) bool {
 	db := connectDatabase()
 	defer db.Close()
 
-	operation := "SELECT token_hash FROM Users WHERE user_email = ?"
+	operation := "SELECT user_hash FROM Users WHERE user_email = ?"
 	var hash string
 	row := db.QueryRow(operation, userEmail).Scan(&hash)
 	return row != sql.ErrNoRows
 }
 
-func updateUserHash(userEmail string, tokenHash string) error {
+func updateUserHash(userEmail string, userHash string) error {
 	db := connectDatabase()
 	defer db.Close()
 
-	operation, err := db.Prepare("UPDATE Users SET token_hash = ? WHERE user_email = ?")
+	operation, err := db.Prepare("UPDATE Users SET user_hash = ? WHERE user_email = ?")
 	if err != nil {
 		return err
 	}
-	operation.Exec(tokenHash, userEmail)
+	operation.Exec(userHash, userEmail)
 	log.Printf("Token changed for user %s", userEmail)
 	return nil
 }
 
-func UserExists(tokenHash string) bool {
+func UserExists(userHash string) bool {
 	db := connectDatabase()
 	defer db.Close()
 
-	operation := "SELECT user_email FROM Users WHERE token_hash = ?"
+	operation := "SELECT user_email FROM Users WHERE user_hash = ?"
 	var email string
-	row := db.QueryRow(operation, tokenHash).Scan(&email)
+	row := db.QueryRow(operation, userHash).Scan(&email)
 	return row != sql.ErrNoRows
 }
 
-func GetUserId(tokenHash string) int64 {
+func GetUserId(userHash string) int64 {
 	db := connectDatabase()
 	defer db.Close()
 
-	operation := "SELECT user_id FROM Users WHERE token_hash = ?"
+	operation := "SELECT user_id FROM Users WHERE user_hash = ?"
 	var userId int64
-	db.QueryRow(operation, tokenHash).Scan(&userId)
+	db.QueryRow(operation, userHash).Scan(&userId)
 	log.Printf("Found user %d", userId)
 	return userId
 }
@@ -100,34 +100,34 @@ func GetUserTrackers(userId int64) [][]string {
 	db := connectDatabase()
 	defer db.Close()
 
-	rows, err := db.Query("SELECT tracker_id, link FROM Trackers WHERE user_id = ?", userId)
+	rows, err := db.Query("SELECT tracker_id, tracker_url FROM Trackers WHERE user_id = ?", userId)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer rows.Close()
 
 	var trackers [][]string
-	var id, link string
+	var trackerId, trackerUrl string
 	for rows.Next() {
-		err = rows.Scan(&id, &link)
+		err = rows.Scan(&trackerId, &trackerUrl)
 		if err != nil {
 			log.Fatal(err)
 		}
-		trackers = append(trackers, []string{id, link})
+		trackers = append(trackers, []string{trackerId, trackerUrl})
 	}
 	return trackers
 }
 
-func AddTracker(userId int64, link string, path string) (int64, error) {
+func AddTracker(userId int64, trackerUrl string, cssSelector string) (int64, error) {
 	db := connectDatabase()
 	defer db.Close()
 
-	operation, err := db.Prepare("INSERT INTO Trackers (user_id, link, path) VALUES (?, ?, ?)")
+	operation, err := db.Prepare("INSERT INTO Trackers (user_id, tracker_url, css_selector) VALUES (?, ?, ?)")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	result, _ := operation.Exec(userId, link, path)
+	result, _ := operation.Exec(userId, trackerUrl, cssSelector)
 
 	trackerId, err := result.LastInsertId()
 	if err != nil {
@@ -157,9 +157,9 @@ func GetTrackerById(trackerId int64) (int64, string, string) {
 	defer db.Close()
 
 	var userId int64
-	var link, path string
-	db.QueryRow("SELECT user_id, link, path FROM Trackers WHERE tracker_id = ?", trackerId).Scan(&userId, &link, &path)
-	return userId, link, path
+	var trackerUrl, cssSelector string
+	db.QueryRow("SELECT user_id, css_selector, path FROM Trackers WHERE tracker_id = ?", trackerId).Scan(&userId, &trackerUrl, &cssSelector)
+	return userId, trackerUrl, cssSelector
 }
 
 func GetOldPrices(currentDate int64) [][]string {
