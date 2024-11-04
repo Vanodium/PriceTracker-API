@@ -1,5 +1,5 @@
 # PriceTracker API
-This is backend for my pricetracker chrome extension
+This is backend for my pricetracker [chrome extension](https://github.com/Vanodium/PriceTracker-Extension)
 
 
 It is capable of:
