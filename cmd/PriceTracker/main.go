@@ -3,8 +3,8 @@ package main
 import (
 	"net/http"
 
-	routes "github.com/Vanodium/pricetracker/internal/routes"
 	core_functions "github.com/Vanodium/pricetracker/internal/services"
+	routes "github.com/Vanodium/pricetracker/internal/transport/rest"
 
 	"log"
 
