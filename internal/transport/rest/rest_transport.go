@@ -50,9 +50,9 @@ func HashString(s string) string {
 
 func ApiResponceJson[T any](w http.ResponseWriter, data T, isError bool, message string) {
 	type ApiResponse struct {
-		Data    interface{} `json:"data"`
-		Error   bool        `json:"error,omitempty"`
-		Message string      `json:"message,omitempty"`
+		Data    T      `json:"data"`
+		Error   bool   `json:"error,omitempty"`
+		Message string `json:"message,omitempty"`
 	}
 
 	w.Header().Set("Content-Type", "application/json")

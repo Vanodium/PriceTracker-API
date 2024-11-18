@@ -27,19 +27,18 @@ func connectDatabase() *sql.DB {
 
 func AddUser(userHash string, userEmail string) error {
 	db := connectDatabase()
+	defer db.Close()
+
 	if userEmailExists(userEmail) {
 		return updateUserHash(userEmail, userHash)
-	} else {
-		defer db.Close()
-
-		operation, err := db.Prepare("INSERT INTO Users (user_hash, user_email) VALUES (?, ?)")
-		if err != nil {
-			return err
-		}
-		operation.Exec(userHash, userEmail)
-		log.Println("New user added")
-		return nil
 	}
+	operation, err := db.Prepare("INSERT INTO Users (user_hash, user_email) VALUES (?, ?)")
+	if err != nil {
+		return err
+	}
+	operation.Exec(userHash, userEmail)
+	log.Println("New user added")
+	return nil
 }
 
 func userEmailExists(userEmail string) bool {
