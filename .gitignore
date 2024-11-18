@@ -1,3 +1,4 @@
 .DS_Store
 internal/transport/enviroment.env
 tests/req.json
+internal/db/database.db
